@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: rpg-narrador-ia
+  
+  # Thymeleaf
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+  
+  # JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  
+  # Database H2 (desenvolvimento)
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  h2:
+    console:
+      enabled: true
+
+# Configuração Gemini
+gemini:
+  api-key: AIzaSyAVhMMqLsSU4Mch7l6ohw_oQ3NhKMyu-5Q
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG

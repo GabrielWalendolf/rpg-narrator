@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Narrador IA - Jogo</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🎲 RPG Narrador IA</h1>
+        <p>Sistema de Jogo de RPG com Narração Adaptativa por IA</p>
+    </header>
+
+    <main>
+        <section class="session-info">
+            <div class="info-box">
+                    <span class="info-item">
+                        <strong>Tema:</strong> <span th:text="${currentSession.theme}"></span>
+                    </span>
+                <span class="info-item">
+                        <strong>Dificuldade:</strong> <span th:text="${currentSession.difficulty}"></span>
+                    </span>
+                <span class="info-item">
+                        <strong>Classe:</strong> <span th:text="${currentSession.playerClass}"></span>
+                    </span>
+            </div>
+        </section>
+
+        <div class="scenario-box">
+            <h2>📖 Cenário Inicial</h2>
+            <p th:text="${currentSession.initialScenario}"></p>
+        </div>
+
+        <section class="input-section">
+            <h2>Sua Ação</h2>
+
+            <form method="post" th:action="@{/session/{sessionId}/action(sessionId=${currentSession.sessionId})}" class="action-form">
+                <div class="form-group">
+                    <label for="actionDescription">O que você faz?</label>
+                    <textarea id="actionDescription" name="actionDescription" placeholder="Descreva sua ação..." rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="diceType">Escolha o tipo de dado:</label>
+                    <select id="diceType" name="diceType" required>
+                        <option value="d4">d4 (4 lados)</option>
+                        <option value="d6">d6 (6 lados)</option>
+                        <option value="d8">d8 (8 lados)</option>
+                        <option value="d10">d10 (10 lados)</option>
+                        <option value="d12">d12 (12 lados)</option>
+                        <option value="d20" selected>d20 (20 lados)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-roll">🎲 Rolar Dados</button>
+            </form>
+        </section>
+
+        <div th:if="${!actions.empty}" class="result-section">
+            <div th:with="lastAction=${actions[actions.size()-1]}">
+                <h2>Resultado da Última Ação</h2>
+
+                <div class="result-container">
+                    <div class="dice-result-box">
+                        <div class="dice-display">
+                            <span class="dice-icon">🎲</span>
+                            <div class="dice-info">
+                                <span class="result-number" th:text="${lastAction.diceResult}"></span>
+                                <span class="result-type" th:text="${lastAction.diceType}"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="narration-box">
+                        <h3>📖 Narração do Mestre:</h3>
+                        <div class="narration-content">
+                            <p th:text="${lastAction.narration}"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-description-box">
+                    <h3>Sua Ação:</h3>
+                    <p th:text="${lastAction.actionDescription}"></p>
+                </div>
+            </div>
+        </div>
+
+        <section class="history-section">
+            <h2>📜 Histórico da Sessão</h2>
+            <div class="history-list">
+                <div th:if="${#lists.isEmpty(actions)}" class="empty-history">
+                    <p>Nenhuma ação realizada ainda...</p>
+                </div>
+                <div th:each="action : ${actions}" class="history-item">
+                    <div class="timestamp">⏰ <span th:text="${#temporals.format(action.createdAt, 'HH:mm:ss')}"></span></div>
+                    <div class="action">🎯 <span th:text="${action.actionDescription}"></span></div>
+                    <div class="result">🎲 Rolou <span th:text="${action.diceType}"></span>: <strong th:text="${action.diceResult}"></strong></div>
+                    <div class="narration-text">"<span th:text="${action.narration}"></span>"</div>
+                </div>
+            </div>
+        </section>
+
+        <div class="new-session-button">
+            <a href="/" class="btn-secondary">🔄 Nova Sessão</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 RPG Narrador IA - Sistema de Jogo com IA Generativa</p>
+    </footer>
+</div>
+</body>
+</html>
