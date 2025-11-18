@@ -31,7 +31,7 @@ spring:
 
 # Configuração Gemini
 gemini:
-  api-key: AIzaSyAVhMMqLsSU4Mch7l6ohw_oQ3NhKMyu-5Q
+  api-key: chave-api-gemini
 
 server:
   port: 8080
