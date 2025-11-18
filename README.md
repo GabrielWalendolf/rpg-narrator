@@ -75,7 +75,6 @@ Abra seu navegador em: `http://localhost:8080`.
 | GET | `/session/{sessionId}` | Carrega o estado atual da sessão e o histórico. |
 | POST | `/session/{sessionId}/action` | Executa a ação, rola o dado, gera a narração (via IA) e persiste o novo turno. |
 
-```
-```
+
 
 
