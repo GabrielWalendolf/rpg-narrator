@@ -23,18 +23,24 @@ spring:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
     username: sa
-    password: 
+    password:
   
   h2:
     console:
       enabled: true
 
-# Configuração Gemini
-gemini:
-  api-key: chave-api-gemini
+  # Configuração Spring AI para Gemini (AGORA DENTRO DO PRIMEIRO BLOCO SPRING)
+  ai:
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY} # Spring lerá daqui!
+        chat:
+          options:
+            model: gemini-2.0-flash # Usamos o modelo que funcionou para você
+            temperature: 0.8
 
 server:
-  port: 8080
+  port: 8080 # Se quiser usar outra porta, mude para 8081
 
 logging:
   level:

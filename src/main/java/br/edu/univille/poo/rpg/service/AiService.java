@@ -1,39 +1,57 @@
 package br.edu.univille.poo.rpg.service;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import okhttp3.*;
-import org.springframework.beans.factory.annotation.Value;
+// NOVAS IMPORTAÇÕES DO SPRING AI
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Service;
+
 import java.io.IOException;
+import java.util.Map;
 
 @Service
 public class AiService {
 
-    @Value("${gemini.api-key}")
-    private String apiKey;
+    // CAMPO NOVO: ChatClient é injetado pelo Spring
+    private final ChatClient chatClient;
 
-    private final OkHttpClient httpClient = new OkHttpClient();
-    private final Gson gson = new Gson();
-    private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    // CONSTRUTOR NOVO: Injeta o builder do ChatClient
+    public AiService(ChatClient.Builder chatClientBuilder) {
+        this.chatClient = chatClientBuilder.build();
+    }
 
     /**
      * Gera um cenário inicial para começar a sessão
      */
     public String generateInitialScenario(String theme, String difficulty, String playerClass) {
-        String prompt = "Crie um cenário inicial imersivo e envolvente para uma sessão de RPG de mesa.\n\n" +
-                "Tema: " + theme + "\n" +
-                "Dificuldade: " + difficulty + "\n" +
-                "Classe do Jogador: " + playerClass + "\n\n" +
-                "Gere um cenário que:\n" +
-                "1. Seja interessante e envolvente\n" +
-                "2. Apresente o mundo e a situação inicial\n" +
-                "3. Deixe claro o que o jogador pode fazer\n" +
-                "4. Tenha 2-3 parágrafos\n" +
-                "5. Termine com uma pergunta ou abertura para a ação do jogador";
 
-        return callGeminiApi(prompt);
+        // Usamos PromptTemplate para estruturar o prompt de forma mais limpa
+        PromptTemplate promptTemplate = new PromptTemplate("""
+                Crie um cenário inicial imersivo e envolvente para uma sessão de RPG de mesa.
+                
+                Tema: {theme}
+                Dificuldade: {difficulty}
+                Classe do Jogador: {playerClass}
+                
+                Gere um cenário que:
+                1. Seja interessante e envolvente
+                2. Apresente o mundo e a situação inicial
+                3. Deixe claro o que o jogador pode fazer
+                4. Tenha 2-3 parágrafos
+                5. Termine com uma pergunta ou abertura para a ação do jogador
+                """);
+
+        String prompt = promptTemplate.render(
+                Map.of(
+                        "theme", theme,
+                        "difficulty", difficulty,
+                        "playerClass", playerClass
+                )
+        );
+
+        // CHAMADA DA API USANDO SPRING AI
+        return chatClient.prompt(prompt)
+                .call()
+                .content();
     }
 
     /**
@@ -54,88 +72,47 @@ public class AiService {
             successLevel = "Falha (Ação não realizada e possíveis consequências negativas)";
         }
 
-        // PROMPT MELHORADO PARA CONTINUIDADE
-        String prompt = "Você é um Mestre de RPG experiente narrando uma aventura contínua.\n" +
-                "Sua tarefa é gerar a narração do próximo turno mantendo TOTAL coerência com o histórico.\n\n" +
-                "=== HISTÓRICO DA AVENTURA (MEMÓRIA) ===\n" +
-                fullContext + "\n" +
-                "=======================================\n\n" +
-                "=== TURNO ATUAL ===\n" +
-                "AÇÃO DO JOGADOR: " + playerAction + "\n" +
-                "DADO ROLADO: " + diceResult + " (" + diceType + ")\n" +
-                "RESULTADO MECÂNICO: " + successLevel + "\n\n" +
-                "Instruções de Narração:\n" +
-                "1. Descreva a consequência direta da ação baseada no Nível de Sucesso.\n" +
-                "2. IMPORTANTE: Use elementos do Histórico (nomes, estados, locais) para manter a continuidade.\n" +
-                "3. Se houve falha, descreva as consequências negativas.\n" +
-                "4. Termine descrevendo a nova situação para o jogador reagir.\n" +
-                "5. Máximo de 3 parágrafos curtos.";
+        // Usamos PromptTemplate para estruturar o prompt de forma mais limpa
+        PromptTemplate promptTemplate = new PromptTemplate("""
+                Você é um Mestre de RPG experiente narrando uma aventura contínua.
+                Sua tarefa é gerar a narração do próximo turno mantendo TOTAL coerência com o histórico.
+                
+                === HISTÓRICO DA AVENTURA (MEMÓRIA) ===
+                {fullContext}
+                =======================================
+                
+                === TURNO ATUAL ===
+                AÇÃO DO JOGADOR: {playerAction}
+                DADO ROLADO: {diceResult} ({diceType})
+                RESULTADO MECÂNICO: {successLevel}
+                
+                Instruções de Narração:
+                1. Descreva a consequência direta da ação baseada no Nível de Sucesso.
+                2. IMPORTANTE: Use elementos do Histórico (nomes, estados, locais) para manter a continuidade.
+                3. Se houve falha, descreva as consequências negativas.
+                4. Termine descrevendo a nova situação para o jogador reagir.
+                5. Máximo de 3 parágrafos curtos.
+                """);
 
-        return callGeminiApi(prompt);
+        String prompt = promptTemplate.render(
+                Map.of(
+                        "fullContext", fullContext,
+                        "playerAction", playerAction,
+                        "diceResult", diceResult,
+                        "diceType", diceType,
+                        "successLevel", successLevel
+                )
+        );
+
+        // CHAMADA DA API USANDO SPRING AI
+        return chatClient.prompt(prompt)
+                .call()
+                .content();
     }
 
-    /**
-     * Chama a API Gemini
-     */
-    private String callGeminiApi(String prompt) {
-        try {
-            // Construir o corpo da requisição
-            JsonObject requestBody = new JsonObject();
-            JsonArray contentsArray = new JsonArray();
-            JsonObject content = new JsonObject();
-            JsonArray partsArray = new JsonArray();
-            JsonObject part = new JsonObject();
+    // Método callGeminiApi foi removido, assim como os campos Gson, OkHttpClient e GEMINI_API_URL.
+    // O bloco try-catch de conexão ainda é tratado indiretamente pelo Spring AI.
 
-            part.addProperty("text", prompt);
-            partsArray.add(part);
-            content.add("parts", partsArray);
-            contentsArray.add(content);
-            requestBody.add("contents", contentsArray);
-
-            // Criar a requisição HTTP
-            String url = GEMINI_API_URL + "?key=" + apiKey;
-            RequestBody body = RequestBody.create(
-                    requestBody.toString(),
-                    MediaType.parse("application/json")
-            );
-
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(body)
-                    .build();
-
-            // Executar a requisição
-            try (Response response = httpClient.newCall(request).execute()) {
-                String responseBody = response.body().string(); // Lê a resposta APENAS UMA VEZ aqui
-
-                if (!response.isSuccessful()) {
-                    // Imprime o erro detalhado no console para você ver o que aconteceu
-                    System.err.println("ERRO DETALHADO GEMINI: " + responseBody);
-                    return "Erro ao chamar API Gemini (" + response.code() + "): " + responseBody;
-                }
-
-                JsonObject responseJson = gson.fromJson(responseBody, JsonObject.class);
-
-                // Extrair o texto da resposta
-                if (responseJson.has("candidates") && responseJson.getAsJsonArray("candidates").size() > 0) {
-                    JsonObject candidate = responseJson.getAsJsonArray("candidates").get(0).getAsJsonObject();
-                    if (candidate.has("content") && candidate.getAsJsonObject("content").has("parts")) {
-                        JsonArray parts = candidate.getAsJsonObject("content").getAsJsonArray("parts");
-                        if (parts.size() > 0) {
-                            return parts.get(0).getAsJsonObject().get("text").getAsString();
-                        }
-                    }
-                }
-
-                return "Não foi possível gerar narração (Resposta sem candidatos).";
-            }
-
-        } catch (IOException e) {
-            return "Erro ao conectar com API Gemini: " + e.getMessage();
-        } catch (Exception e) {
-            return "Erro ao processar resposta da IA: " + e.getMessage();
-        }
-    }
 
     /**
      * Extrai o valor máximo do tipo de dado
